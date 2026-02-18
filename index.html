@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Wallpaper Engine — System Flowchart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --surface: #0d1117;
+    --border: #1a2332;
+    --gui: #39d353;
+    --gui-dim: #1a4a22;
+    --gui-bg: #071209;
+    --service: #00d4d4;
+    --service-dim: #004a4a;
+    --service-bg: #000d0d;
+    --backend: #f08d49;
+    --backend-dim: #5a3010;
+    --backend-bg: #110800;
+    --engine: #ff4757;
+    --engine-dim: #5a0a12;
+    --engine-bg: #110003;
+    --storage: #8b8fa8;
+    --storage-dim: #2a2c38;
+    --storage-bg: #0a0a10;
+    --purple: #bd93f9;
+    --purple-dim: #3d2060;
+    --text: #c9d1d9;
+    --text-dim: #6e7681;
+    --arrow: #3d8bcd;
+    --arrow-bi: #bd93f9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 24px;
+    min-width: 1400px;
+  }
+
+  /* Grid noise background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(57,211,83,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(57,211,83,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #0d1117 0%, #080c10 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gui), var(--service), var(--backend), var(--engine), transparent);
+  }
+  .header h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--gui) 0%, var(--service) 50%, var(--backend) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .header p {
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 32px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    border-left: 3px solid var(--service);
+    color: var(--service);
+  }
+
+  /* ── LAYER ARCHITECTURE ── */
+  .layer-arch {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  /* ── CLUSTER BOX ── */
+  .cluster {
+    border: 1px solid;
+    padding: 16px;
+    position: relative;
+  }
+  .cluster-label {
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 0 8px;
+    font-weight: 700;
+  }
+  .cluster.gui    { border-color: var(--gui);     background: var(--gui-bg);     }
+  .cluster.gui    .cluster-label { color: var(--gui);     background: var(--gui-bg);     }
+  .cluster.service{ border-color: var(--service); background: var(--service-bg); }
+  .cluster.service .cluster-label { color: var(--service); background: var(--service-bg); }
+  .cluster.backend{ border-color: var(--backend); background: var(--backend-bg); }
+  .cluster.backend .cluster-label { color: var(--backend); background: var(--backend-bg); }
+  .cluster.engine { border-color: var(--engine);  background: var(--engine-bg);  }
+  .cluster.engine .cluster-label { color: var(--engine);  background: var(--engine-bg);  }
+  .cluster.storage{ border-color: var(--storage); background: var(--storage-bg); }
+  .cluster.storage .cluster-label { color: var(--storage); background: var(--storage-bg); }
+  .cluster.purple { border-color: var(--purple);  background: #0a0312;           }
+  .cluster.purple  .cluster-label { color: var(--purple);  background: #0a0312;           }
+
+  /* ── NODES ── */
+  .node {
+    padding: 8px 12px;
+    margin: 6px 0;
+    border: 1px solid;
+    font-size: 11px;
+    position: relative;
+    cursor: default;
+    transition: all 0.15s;
+  }
+  .node:hover { filter: brightness(1.2); transform: translateX(2px); }
+  .node .node-title { font-weight: 700; font-size: 11px; }
+  .node .node-detail { color: var(--text-dim); font-size: 10px; margin-top: 3px; }
+
+  .node.gui    { border-color: var(--gui-dim);     background: rgba(57,211,83,0.06);    color: var(--gui);     }
+  .node.service{ border-color: var(--service-dim); background: rgba(0,212,212,0.06);    color: var(--service); }
+  .node.backend{ border-color: var(--backend-dim); background: rgba(240,141,73,0.06);   color: var(--backend); }
+  .node.engine { border-color: var(--engine-dim);  background: rgba(255,71,87,0.06);    color: var(--engine);  }
+  .node.storage{ border-color: var(--storage-dim); background: rgba(139,143,168,0.06);  color: var(--storage); }
+  .node.purple { border-color: var(--purple-dim);  background: rgba(189,147,249,0.06);  color: var(--purple);  }
+  .node.start  { border-color: var(--gui);          background: var(--gui-dim);         color: #fff; text-align: center; font-weight: 700; letter-spacing: 2px; }
+  .node.stop-node { border-color: var(--engine);    background: var(--engine-dim);      color: #fff; text-align: center; font-weight: 700; letter-spacing: 2px; }
+  .node.decision {
+    border-color: var(--service);
+    background: rgba(0,212,212,0.08);
+    color: var(--service);
+    clip-path: polygon(16px 0%, calc(100% - 16px) 0%, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0% 50%);
+    padding: 8px 32px;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  /* ── ARROWS ── */
+  .arrow {
+    text-align: center;
+    color: var(--arrow);
+    font-size: 16px;
+    line-height: 1;
+    margin: 2px 0;
+  }
+  .arrow.bi  { color: var(--arrow-bi); }
+  .arrow.dash { opacity: 0.5; }
+  .arrow-label { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+
+  /* ── FLOW SECTIONS ── */
+  .flow-grid {
+    display: grid;
+    gap: 24px;
+  }
+  .flow-grid-2 { grid-template-columns: 1fr 1fr; }
+  .flow-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .flow-row {
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .flow-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── CONNECTOR ── */
+  .connector {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--arrow);
+    font-size: 12px;
+    padding: 0 8px;
+  }
+  .connector-line {
+    flex: 1;
+    height: 1px;
+    background: var(--arrow);
+    opacity: 0.4;
+  }
+  .connector-bi { color: var(--arrow-bi); }
+  .connector-bi .connector-line { background: var(--arrow-bi); }
+
+  /* ── INLINE COLS in cluster ── */
+  .inner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .inner-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* ── THREAD TAG ── */
+  .tag {
+    display: inline-block;
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .tag.daemon { background: var(--purple-dim); color: var(--purple); }
+  .tag.async  { background: var(--backend-dim); color: var(--backend); }
+  .tag.sync   { background: var(--service-dim); color: var(--service); }
+  .tag.system { background: var(--engine-dim); color: var(--engine); }
+
+  /* spacer */
+  .gap { height: 16px; }
+  .gap-sm { height: 8px; }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 32px 0;
+  }
+
+  /* subsection numbering */
+  .sub-num {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+  .pipe-tree {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 8px 12px;
+    border-left: 2px solid var(--border);
+    margin: 6px 0;
+    white-space: pre;
+  }
+  .pipe-tree .h { color: var(--gui); }
+  .pipe-tree .s { color: var(--service); }
+  .pipe-tree .b { color: var(--backend); }
+  .pipe-tree .e { color: var(--engine); }
+  .pipe-tree .p { color: var(--purple); }
+  .pipe-tree .st { color: var(--storage); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Linux Wallpaper Engine — Expanded Features GUI</h1>
+    <p>Diagrama de Flujo Exhaustivo del Sistema · Arquitectura de Tres Capas</p>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="color:var(--gui);background:var(--gui-dim)"></div><span style="color:var(--gui)">GUI / Python TKinter</span></div>
+    <div class="legend-item"><div class="legend-dot" style="color:var(--service);background:var(--service-dim)"></div><span style="color:var(--service)">Services / Controllers</span></div>
+    <div class="legend-item"><div class="legend-dot" style="color:var(--backend);background:var(--backend-dim)"></div><span style="color:var(--backend)">Backend / Bash</span></div>
+    <div class="legend-item"><div class="legend-dot" style="color:var(--engine);background:var(--engine-dim)"></div><span style="color:var(--engine)">Motor C++ / Rendering</span></div>
+    <div class="legend-item"><div class="legend-dot" style="color:var(--storage);background:var(--storage-dim)"></div><span style="color:var(--storage)">Almacenamiento / Archivos</span></div>
+    <div class="legend-item"><div class="legend-dot" style="color:var(--purple);background:var(--purple-dim)"></div><span style="color:var(--purple)">Threads Daemon / Config Sync</span></div>
+    <div class="legend-item">
+      <span class="tag daemon">DAEMON</span><span style="color:var(--text-dim)">Thread Daemon</span>
+    </div>
+    <div class="legend-item">
+      <span>↕</span><span style="color:var(--text-dim);margin-left:4px">Bidireccional</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SECTION 0: ARQUITECTURA DE TRES CAPAS -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="section-title">§ Arquitectura de Tres Capas</div>
+  <div class="layer-arch">
+    <div class="cluster gui">
+      <span class="cluster-label">CAPA 1 · GUI Python</span>
+      <div class="node gui"><div class="node-title">GUI.py · Entry Point</div><div class="node-detail">WallpaperEngineGUI · TKinter</div></div>
+      <div class="node gui"><div class="node-title">DirectoryControls</div></div>
+      <div class="node gui"><div class="node-title">GalleryCanvas</div><div class="node-detail">FlagsPanel · SoundPanel</div></div>
+      <div class="node gui"><div class="node-title">LogArea · KeybindingController</div></div>
+      <div class="node gui"><div class="node-title">EventHandlers</div><div class="node-detail">Orquestador Central</div></div>
+    </div>
+    <div class="cluster service">
+      <span class="cluster-label">CAPA 2 · Services / Orquestador</span>
+      <div class="node service"><div class="node-title">EngineController</div><div class="node-detail">_initialize_script_path() → main.sh</div></div>
+      <div class="node service"><div class="node-title">ArgumentBuilder</div><div class="node-detail">Construye flags CLI</div></div>
+      <div class="node service"><div class="node-title">ConfigManager</div><div class="node-detail">load · merge · save JSON</div></div>
+      <div class="node service"><div class="node-title">WallpaperLoader</div><div class="node-detail">scan_directory · thumbnails</div></div>
+      <div class="node service"><div class="node-title">GalleryManager · GroupManager</div></div>
+      <div class="node service"><div class="node-title">SystemdManager</div><div class="node-detail">Startup automático</div></div>
+    </div>
+    <div class="cluster backend">
+      <span class="cluster-label">CAPA 3 · Backend Bash + Motor C++</span>
+      <div class="node backend"><div class="node-title">main.sh · Orquestador Bash</div><div class="node-detail">source/core/main.sh</div></div>
+      <div class="node backend"><div class="node-title">cmd_set · cmd_random</div></div>
+      <div class="node backend"><div class="node-title">cmd_auto_random · cmd_stop</div></div>
+      <div class="node backend"><div class="node-title">apply_wallpaper()</div><div class="node-detail">xdotool · window mgmt</div></div>
+      <div class="node engine"><div class="node-title">linux-wallpaperengine (C++)</div><div class="node-detail">Renderizado real del wallpaper</div></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SECTION 1: FLUJO DE INSTALACIÓN -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="section-title">§1 · Flujo de Instalación (install.sh)</div>
+  <div class="cluster backend">
+    <span class="cluster-label">install.sh</span>
+    <div class="flow-grid flow-grid-3">
+      <div class="flow-col">
+        <div class="node start">START · install.sh</div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">Detección del SO</div><div class="node-detail">lsb_release / os-release</div></div>
+        <div class="arrow">↓</div>
+        <div class="node decision">Distribución?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0;">
+          <div class="node backend" style="text-align:center"><div class="node-title">apt</div><div class="node-detail">Debian/Ubuntu</div></div>
+          <div class="node backend" style="text-align:center"><div class="node-title">pacman</div><div class="node-detail">Arch/Manjaro</div></div>
+          <div class="node backend" style="text-align:center"><div class="node-title">dnf</div><div class="node-detail">Fedora</div></div>
+          <div class="node backend" style="text-align:center"><div class="node-title">zypper</div><div class="node-detail">openSUSE</div></div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node decision">Audio System?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0;">
+          <div class="node backend" style="text-align:center"><div class="node-title">PipeWire</div><div class="node-detail">pipewire-pulse</div></div>
+          <div class="node backend" style="text-align:center"><div class="node-title">PulseAudio</div><div class="node-detail">pulseaudio</div></div>
+        </div>
+      </div>
+      <div class="flow-col">
+        <div class="node backend"><div class="node-title">Instalar Dependencias Sistema</div><div class="node-detail">cmake, make, libx11, OpenGL, mpv, glfw…</div></div>
+        <div class="arrow">↓</div>
+        <div class="node service"><div class="node-title">Crear venv Python</div><div class="node-detail">python3 -m venv .venv</div></div>
+        <div class="arrow">↓</div>
+        <div class="node service"><div class="node-title">Instalar Deps Python</div><div class="node-detail">pip install -r requirements.txt</div></div>
+        <div class="arrow">↓</div>
+        <div class="node decision">¿Backend existe?</div>
+        <div class="arrow">↓ NO</div>
+        <div class="node decision">¿Auto-instalar?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0;">
+          <div class="node backend" style="text-align:center"><div class="node-title">Sí</div><div class="node-detail">git clone + cmake build</div></div>
+          <div class="node storage" style="text-align:center"><div class="node-title">No</div><div class="node-detail">warn + continuar</div></div>
+        </div>
+      </div>
+      <div class="flow-col">
+        <div class="node service"><div class="node-title">Validar Backend</div><div class="node-detail">test -x linux-wallpaperengine</div></div>
+        <div class="arrow">↓</div>
+        <div class="node storage"><div class="node-title">Crear .desktop Entry</div><div class="node-detail">~/.local/share/applications/</div></div>
+        <div class="arrow">↓</div>
+        <div class="node storage"><div class="node-title">Crear config.json default</div><div class="node-detail">~/.config/linux-wallpaper-engine-features/</div></div>
+        <div class="arrow">↓</div>
+        <div class="node start">INSTALACIÓN COMPLETA ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SECTION 2: FLUJO DE INICIO (STARTUP) -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="section-title">§2 · Flujo de Inicio de Aplicación</div>
+  <div class="flow-grid flow-grid-2">
+    <div class="cluster gui">
+      <span class="cluster-label">run.sh → GUI Bootstrap</span>
+      <div class="node start">START</div>
+      <div class="arrow">↓</div>
+      <div class="node backend"><div class="node-title">run.sh</div></div>
+      <div class="arrow">↓</div>
+      <div class="node decision">¿.venv existe?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0;">
+        <div class="node service" style="text-align:center"><div class="node-title">Sí</div><div class="node-detail">source .venv/bin/activate</div></div>
+        <div class="node storage" style="text-align:center"><div class="node-title">No</div><div class="node-detail">fallback: system python3</div></div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">detect_engine_binary()</div><div class="node-detail">Buscar linux-wallpaperengine en PATH</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">python3 source/GUI.py</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">WallpaperEngineGUI.__init__()</div><div class="node-detail">gui/gui_engine.py</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">Crear ventana TKinter</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">Configurar grid layout</div></div>
+      <div class="pipe-tree">
+Row 0: <span class="h">DirectoryControls</span>
+Row 1: <span class="h">GalleryCanvas</span>  (expandible)
+Row 3: <span class="h">LogArea</span>
+Col 1: <span class="h">FlagsPanel</span> + <span class="h">SoundPanel</span>
+      </div>
+    </div>
+    <div class="cluster service">
+      <span class="cluster-label">Inicialización de Componentes</span>
+      <div class="node service"><div class="node-title">_load_config()</div></div>
+      <div class="pipe-tree">
+<span class="s">load_config()</span> → config.json
+<span class="s">merge_config(DEFAULT, loaded)</span>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">LogArea(main_window)</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">WallpaperLoader()</div><div class="node-detail">preparar cargador de wallpapers</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">EngineController(config)</div><div class="node-detail">_initialize_script_path() → source/core/main.sh</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">_create_ui()</div></div>
+      <div class="pipe-tree">
+<span class="h">DirectoryControls</span>(frame)
+<span class="h">FlagsPanel</span>(frame)
+<span class="h">SoundPanel</span>(frame)
+<span class="h">GalleryCanvas</span>(frame)
+<span class="h">KeybindingController</span>()
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">_create_gallery_view()</div><div class="node-detail">GalleryView(canvas) · GalleryManager(view)</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">_create_managers()</div><div class="node-detail">EventHandlers() — orquestador central</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">_connect_callbacks()</div></div>
+      <div class="pipe-tree">
+pick_button    → <span class="s">on_pick_directory()</span>
+explore_button → <span class="s">on_explore_directory()</span>
+execute_button → <span class="s">on_execute()</span>
+stop_button    → <span class="s">on_stop()</span>
+checkboxes     → <span class="s">on_flag_change()</span>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">_initialize_ui_values()</div><div class="node-detail">Cargar valores config → UI widgets</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">_load_backend_logs()</div><div class="node-detail">Cargar logs previos → LogArea</div></div>
+      <div class="arrow">↓</div>
+      <div class="node start">main_window.mainloop() — WAITING FOR INPUT</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SECTION 3 & 4: SELECCIÓN DIR + EJECUTAR -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="section-title">§3–4 · Selección de Directorio y Ejecución</div>
+  <div class="flow-grid flow-grid-2">
+
+    <!-- PICK DIR -->
+    <div class="cluster gui">
+      <span class="cluster-label">§3 · Usuario: PICK DIR</span>
+      <div class="node gui"><div class="node-title">Click: "PICK DIR" button</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">DirectoryControls.pick_button.command</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">EventHandlers.on_pick_directory()</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">filedialog.askdirectory()</div><div class="node-detail">→ /path/to/wallpapers</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">ConfigUpdater.set_directory(config, path)</div></div>
+      <div class="pipe-tree">
+config["--dir"] = path
+<span class="st">ConfigManager.save(config)</span>  → disk
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">gallery_manager.refresh()</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">WallpaperLoader.scan_directory(path)</div><div class="node-detail">Escanear wallpapers en directorio</div></div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">GalleryView.populate(wallpapers)</div></div>
+      <div class="pipe-tree">
+<span class="h">Generar miniaturas</span> (thumbnails.py)
+<span class="h">Renderizar en GalleryCanvas</span>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">LogArea._log("Directory set to: /path")</div></div>
+    </div>
+
+    <!-- EXECUTE -->
+    <div class="cluster service">
+      <span class="cluster-label">§4 · Usuario: EXECUTE</span>
+      <div class="node gui"><div class="node-title">Click: "EXECUTE" button</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">EventHandlers.on_execute()</div></div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">PASO 1: Obtener config actual del UI</div></div>
+      <div class="pipe-tree">
+config["--dir"]           → directorio
+config["--window"]        → modo ventana
+config["--above"]         → flag above
+config["--sound"]         → silent|noautomute
+config["--random"|"--set"] → modo activo
+config["--pool"]          → pool si aplica
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">PASO 2: ArgumentBuilder.build_arguments()</div></div>
+      <div class="pipe-tree">
+_add_directory_arg()  → ["--dir", "/path"]
+_add_main_command()   → --set|--random|--delay
+_add_window_arg()     → ["--window", "0x0x1920x1080"]
+_add_above_arg()      → ["--above"]
+_add_pool_arg()       → ["--pool", w1, w2…]
+_add_sound_arg()      → ["--sound","--silent"…]
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node service"><div class="node-title">PASO 3: EngineController.run_engine(args)</div></div>
+      <div class="pipe-tree">
+<span class="st">ConfigManager.save(config)</span>
+cmd = ["/path/to/main.sh"] + arguments
+<span class="p">Thread(daemon=True).start() ←</span><span class="tag daemon">DAEMON</span>
+  └─ Popen(cmd, stdout=PIPE, stderr=PIPE)
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node gui"><div class="node-title">LogArea._log("Executing wallpaper...")</div></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SECTION 5: BACKEND PROCESSING main.sh -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="section-title">§5 · Backend Processing — main.sh</div>
+  <div class="cluster backend">
+    <span class="cluster-label">source/core/main.sh</span>
+    <div class="flow-grid flow-grid-3">
+      <!-- Col 1: Parse + Validate -->
+      <div class="flow-col">
+        <div class="node backend"><div class="node-title">ENTRADA: main.sh [ARGS]</div></div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">Parsear argumentos</div></div>
+        <div class="pipe-tree">
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    <span class="b">--dir</span>    DIR="$2"
+    <span class="b">--set</span>    COMMAND=set
+    <span class="b">--random</span> COMMAND=random
+    <span class="b">--delay</span>  DELAY_SECS="$2"
+    <span class="b">--window</span> WINDOW_RES="$2"
+    <span class="b">--above</span>  ABOVE=true
+    <span class="b">--pool</span>   POOL=(…)
+    <span class="b">--sound</span>  SOUND_FLAGS+=…
+    <span class="b">--stop</span>   COMMAND=stop
+  esac
+done
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">Validar entorno</div></div>
+        <div class="pipe-tree">
+test -d "$DIR"    ✓
+test -x "$ENGINE" ✓
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node decision">¿COMANDO?</div>
+      </div>
+
+      <!-- Col 2: set / random / list -->
+      <div class="flow-col">
+        <div class="node backend"><div class="node-title">cmd_set()</div><div class="node-detail">--set &lt;wallpaper_id&gt;</div></div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">apply_wallpaper(fullpath)</div></div>
+        <div class="pipe-tree">
+<span class="b">Detectar ventana activa (ACTIVE_WIN)</span>
+<span class="e">linux-wallpaperengine "$path" [FLAGS]</span>
+sleep + check (esperar render)
+<span class="b">Cerrar wallpaper anterior</span>
+<span class="b">Aplicar --above, --window</span>
+<span class="b">xdotool windowactivate $ACTIVE_WIN</span>
+→ ✓ WALLPAPER APLICADO
+        </div>
+        <div class="gap-sm"></div>
+        <div class="node backend"><div class="node-title">cmd_random()</div><div class="node-detail">--random</div></div>
+        <div class="pipe-tree">
+<span class="s">Si --pool:</span> seleccionar de POOL[]
+<span class="s">Si no:</span> ls -1 "$DIR" | shuf | head -1
+<span class="b">apply_wallpaper("$DIR/$selected")</span>
+        </div>
+        <div class="gap-sm"></div>
+        <div class="node backend"><div class="node-title">cmd_list()</div><div class="node-detail">--list</div></div>
+        <div class="pipe-tree">
+find "$DIR" -maxdepth 1 -type d | sed '1d'
+        </div>
+      </div>
+
+      <!-- Col 3: auto_random / stop -->
+      <div class="flow-col">
+        <div class="node backend"><div class="node-title">cmd_auto_random()</div><div class="node-detail">--delay &lt;segundos&gt;</div></div>
+        <div class="pipe-tree">
+echo $$ > "$PID_FILE"   <span class="p"># guardar PID</span>
+<span class="p">while true; do</span>
+  cmd_random()
+  sleep &lt;segundos&gt;
+<span class="p">done</span>               <span class="tag daemon">DAEMON LOOP</span>
+        </div>
+        <div class="gap-sm"></div>
+        <div class="node engine"><div class="node-title">cmd_stop()</div><div class="node-detail">--stop</div></div>
+        <div class="pipe-tree">
+<span class="e">kill_previous_engine()</span>
+  → SIGTERM → linux-wallpaperengine
+sleep 0.5
+<span class="e">Si activos: SIGKILL</span>
+kill $(cat $PID_FILE)  <span class="p"># terminar loop</span>
+<span class="st">rm $PID_FILE</span>
+<span class="st">rm $ENGINE_STATE_FILE</span>
+<span class="st">rm $PREV_WINDOWS_FILE</span>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node engine"><div class="node-title">linux-wallpaperengine (C++)</div><div class="node-detail">Motor de renderizado real</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SECTION 6: MODOS DE OPERACIÓN + CICLO COMPLETO -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="section-title">§6–7 · Modos de Operación y Ciclo Completo</div>
+  <div class="flow-grid flow-grid-2">
+
+    <div>
+      <div class="cluster service">
+        <span class="cluster-label">§6 · Modos Especiales</span>
+
+        <div class="node service"><div class="node-title">MODO WINDOW</div><div class="node-detail">--window 0x0xWIDTHxHEIGHT</div></div>
+        <div class="pipe-tree">
+apply_wallpaper() + --window param
+xdotool windowsize → fijar resolución custom
+        </div>
+
+        <div class="gap-sm"></div>
+        <div class="node service"><div class="node-title">MODO RANDOM</div></div>
+        <div class="pipe-tree">
+checkbox "random" → config["--random"]=true
+  auto-disable: "--delay".active = false
+               "--set".active   = false
+        </div>
+
+        <div class="gap-sm"></div>
+        <div class="node service"><div class="node-title">MODO DELAY (auto-rotate)</div></div>
+        <div class="pipe-tree">
+spinner input → config["--delay"]["timer"]="30"
+cmd_auto_random() → loop infinito    <span class="tag daemon">DAEMON</span>
+        </div>
+
+        <div class="gap-sm"></div>
+        <div class="node purple"><div class="node-title">MODO FAVORITOS</div></div>
+        <div class="pipe-tree">
+Right-click wallpaper → "Add to Favorites"
+GroupManager.toggle_favorite(id)
+config["--favorites"].append(id)
+<span class="st">ConfigManager.save(config)</span>
+        </div>
+
+        <div class="gap-sm"></div>
+        <div class="node purple"><div class="node-title">MODO GRUPOS</div></div>
+        <div class="pipe-tree">
+Crear "Nature": config["--groups"]["Nature"]=[w1,w2]
+Seleccionar grupo en dropdown:
+  config["--set"]["wallpaper"] = from_group
+  apply_wallpaper()
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="cluster gui">
+        <span class="cluster-label">§7 · Ciclo Completo: Random Cada 30s</span>
+
+        <div class="node gui"><div class="node-title">Usuario configura:</div></div>
+        <div class="pipe-tree">
+Dir:   /home/user/wallpapers
+Modo:  Random ✓
+Delay: 30 segundos ✓
+Click: EXECUTE
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node service"><div class="node-title">ArgumentBuilder construye:</div></div>
+        <div class="pipe-tree">
+["--dir", "/home/user/wallpapers",
+ "--delay", "30", "--random"]
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">main.sh --dir /home/user/wallpapers --delay 30 --random</div></div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">cmd_auto_random() inicia</div></div>
+        <div class="pipe-tree" style="border-color:var(--backend)">
+<span class="p">┌─ LOOP INFINITO ────────────────────┐</span>
+│  pick random wallpaper from dir   │
+│  apply_wallpaper(selected)        │
+│  sleep 30                         │
+│  ← repeat                         │
+<span class="p">└────────────────────────────────────┘</span>
+                              <span class="tag daemon">DAEMON</span>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node gui"><div class="node-title">Usuario hace clic STOP</div></div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">main.sh --stop</div></div>
+        <div class="pipe-tree">
+kill_previous_engine() → SIGTERM/SIGKILL
+kill $(cat $PID_FILE)  → terminar loop
+<span class="st">limpiar archivos de estado</span>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node stop-node">DETENIDO ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SECTION 8-12: CONFIG + KEYBIND + LOG + SYSTEMD + CLOSE -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="section-title">§8–12 · Persistencia, Keybindings, Logging, Systemd y Cierre</div>
+  <div class="flow-grid flow-grid-3">
+
+    <!-- CONFIGURACIÓN PERSISTENTE -->
+    <div class="cluster storage">
+      <span class="cluster-label">§9 · Config Persistente</span>
+      <div class="node storage"><div class="node-title">~/.config/linux-wallpaper-engine-features/config.json</div></div>
+      <div class="pipe-tree" style="font-size:9px">
+{
+  "__run_at_startup__": false,
+  <span class="s">"--window"</span>: { active, res },
+  <span class="s">"--dir"</span>:    "/path",
+  <span class="s">"--above"</span>:  false,
+  <span class="s">"--delay"</span>:  { active, timer },
+  <span class="s">"--random"</span>: false,
+  <span class="s">"--set"</span>:    { active, wallpaper },
+  <span class="s">"--sound"</span>:  { silent, noautomute, … },
+  <span class="st">"--favorites"</span>: [w1, w2],
+  <span class="st">"--groups"</span>:  { Nature: [w1,w3] },
+  <span class="p">"--keybindings"</span>: { bindings: [] }
+}
+      </div>
+      <div class="arrow bi">↕</div>
+      <div class="node service"><div class="node-title">CICLO DE PERSISTENCIA</div></div>
+      <div class="pipe-tree">
+UI change → <span class="s">ConfigUpdater.set_*()</span>
+         → <span class="st">ConfigManager.save()</span>
+         → JSON file
+
+App close → <span class="st">ConfigManager.save()</span>
+App start → <span class="s">load_config()</span>
+         → merge DEFAULT + loaded
+      </div>
+    </div>
+
+    <!-- KEYBINDINGS + LOGGING -->
+    <div class="flow-col" style="gap:16px">
+      <div class="cluster purple">
+        <span class="cluster-label">§10 · Keybindings</span>
+        <div class="node purple"><div class="node-title">GlobalKeyListener</div></div>
+        <div class="arrow">↓</div>
+        <div class="node purple"><div class="node-title">KeybindingManager</div><div class="node-detail">Ctrl+Alt+N → on_execute()</div></div>
+        <div class="arrow">↓</div>
+        <div class="node decision">Tecla presionada?</div>
+        <div class="arrow">↓ Match</div>
+        <div class="node service"><div class="node-title">Buscar en config["--keybindings"]</div></div>
+        <div class="arrow">↓</div>
+        <div class="node gui"><div class="node-title">Ejecutar callback → mismo flujo que botón</div></div>
+      </div>
+
+      <div class="cluster storage">
+        <span class="cluster-label">§11 · Sistema de Logging</span>
+        <div class="inner-grid">
+          <div class="node gui" style="font-size:10px"><div class="node-title">GUI Python</div><div class="node-detail">logger.component()</div></div>
+          <div class="node backend" style="font-size:10px"><div class="node-title">main.sh</div><div class="node-detail">echo stdout/stderr</div></div>
+        </div>
+        <div class="node engine" style="text-align:center;margin-top:4px;font-size:10px"><div class="node-title">linux-wallpaperengine (C++)</div><div class="node-detail">capturado por main.sh</div></div>
+        <div class="arrow">↓</div>
+        <div class="node storage"><div class="node-title">LogArea (TKinter widget)</div><div class="node-detail">Scrollable text · colores por nivel</div></div>
+        <div class="pipe-tree" style="font-size:9px">
+<span class="h">SUCCESS</span>: Verde    <span class="e">ERROR</span>:   Rojo
+<span class="b">WARNING</span>: Amarillo  <span class="st">DEBUG</span>:  Gris
+        </div>
+        <div class="arrow bi">↕</div>
+        <div class="node storage"><div class="node-title">~/.local/share/.../logs.txt</div></div>
+      </div>
+    </div>
+
+    <!-- SYSTEMD + CLOSE -->
+    <div class="flow-col" style="gap:16px">
+      <div class="cluster purple">
+        <span class="cluster-label">§12 · Integración Systemd</span>
+        <div class="node purple"><div class="node-title">Usuario activa: "Run at startup"</div></div>
+        <div class="arrow">↓</div>
+        <div class="node purple"><div class="node-title">SystemdManager.create_service()</div></div>
+        <div class="pipe-tree" style="font-size:9px">
+~/.config/systemd/user/
+  linux-wallpaper-engine.service
+[Unit]
+  After=display-manager.service
+[Service]
+  ExecStart=&lt;path_to_run.sh&gt;
+[Install]
+  WantedBy=graphical-session.target
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node backend"><div class="node-title">systemctl --user daemon-reload</div></div>
+        <div class="node backend"><div class="node-title">systemctl --user enable + start</div></div>
+        <div class="arrow">↓ Próximo boot</div>
+        <div class="node service"><div class="node-title">systemd → run.sh → load_config()</div><div class="node-detail">Aplica último wallpaper configurado</div></div>
+      </div>
+
+      <div class="cluster engine">
+        <span class="cluster-label">§8 · Cierre de Aplicación</span>
+        <div class="node gui"><div class="node-title">Usuario cierra ventana</div></div>
+        <div class="arrow">↓</div>
+        <div class="node gui"><div class="node-title">WallpaperEngineGUI._on_window_close()</div></div>
+        <div class="arrow">↓</div>
+        <div class="node service"><div class="node-title">EngineController.stop_engine()</div></div>
+        <div class="pipe-tree">
+Popen(["main.sh", "--stop"])
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node storage"><div class="node-title">ConfigManager.save(config)</div><div class="node-detail">Persistir estado final</div></div>
+        <div class="arrow">↓</div>
+        <div class="node gui"><div class="node-title">main_window.destroy()</div></div>
+        <div class="arrow">↓</div>
+        <div class="node stop-node">sys.exit(0) · APLICACIÓN CERRADA</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PATTERN SUMMARY -->
+  <div class="cluster service" style="text-align:center;padding:24px 32px">
+    <span class="cluster-label">PATRÓN ARQUITECTURAL</span>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:600;color:var(--service);margin-top:8px;letter-spacing:2px">
+      CONFIGURATION WRAPPER PATTERN
+    </div>
+    <div style="margin-top:12px;color:var(--text-dim);font-size:11px;line-height:2;max-width:900px;margin-left:auto;margin-right:auto">
+      <span style="color:var(--gui)">GUI Python</span> — envoltorio de configuración que traduce preferencias de usuario en flags CLI<br>
+      → <span style="color:var(--backend)">main.sh</span> — verdadera API del motor, orquesta y procesa los comandos CLI<br>
+      → <span style="color:var(--engine)">linux-wallpaperengine (C++)</span> — motor de renderizado real del wallpaper en el desktop
+    </div>
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap">
+      <span style="color:var(--gui);font-size:10px;letter-spacing:2px">LAYER 1: GUI PYTHON [TKINTER]</span>
+      <span style="color:var(--text-dim)">→</span>
+      <span style="color:var(--service);font-size:10px;letter-spacing:2px">LAYER 2: BASH ORCHESTRATOR</span>
+      <span style="color:var(--text-dim)">→</span>
+      <span style="color:var(--engine);font-size:10px;letter-spacing:2px">LAYER 3: C++ RENDERING ENGINE</span>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;color:var(--text-dim);font-size:10px;letter-spacing:2px">
+    LINUX WALLPAPER ENGINE · EXPANDED FEATURES GUI · SYSTEM FLOWCHART
+  </div>
+
+</div>
+</body>
+</html>
