@@ -1,0 +1,93 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+*.egg
+*.whl
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage
+.coverage
+.coverage.*
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+htmlcov/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Type checkers / caches
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Environment and local config
+.env
+local_settings.py
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+.eggs/
+*.egg-info/
+
+# Misc
+*.swp
+
+# Project-specific files to ignore
+# Lockfile used to reproduce local virtualenv (keeps secrets/out-of-sync artifacts out of VCS)
+requirements.lock.txt
+# Local install notes / developer scratch file
+INSTALL_NOTES.md
+/config.json
+source/core/config.json
+
+# Documentation and changelog files (generated, not tracked)
+# Ignore all .md files except README.md
+*.md
+!README.md
+
+# End of file
+source/gui/__pycache__/config.cpython-313.pyc
+source/gui/__pycache__/engine_controller.cpython-313.pyc
+source/gui/__pycache__/groups.cpython-313.pyc
+source/gui/__pycache__/gui_engine.cpython-313.pyc
+source/gui/__pycache__/wallpaper_loader.cpython-313.pyc
+source/gui/event_handler/__pycache__/event_handler.cpython-313.pyc
+source/gui/gallery_view/__pycache__/context_menus.cpython-313.pyc
+source/gui/gallery_view/__pycache__/dialogs.cpython-313.pyc
+source/gui/gallery_view/__pycache__/gallery_manager.cpython-313.pyc
+source/gui/gallery_view/__pycache__/gallery_view.cpython-313.pyc
+source/gui/gallery_view/__pycache__/thumbnails.cpython-313.pyc
+source/gui/ui_components/__pycache__/directory_controls.cpython-313.pyc
+source/gui/ui_components/__pycache__/flags.cpython-313.pyc
+source/gui/ui_components/__pycache__/gallery_canvas.cpython-313.pyc
+source/gui/ui_components/__pycache__/log_area.cpython-313.pyc
+linux-wallpaperengine
