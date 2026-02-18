@@ -494,9 +494,6 @@ def process_wallpapers(
 
 ---
 
-<details>
----
-
 ## 🚀 Implementing New Features
 
 <details>
@@ -731,7 +728,11 @@ def my_new_function(config, param):
 ```
 
 </details>
+
 ---
+
+## 🔧 Troubleshooting
+
 <details>
 
 ### Application won't start
@@ -773,9 +774,7 @@ Configuration is stored in `~/.config/linux-wallpaper-engine-features/config.jso
 
 ---
 
-
 </details>
-
 
 ---
 
@@ -833,6 +832,7 @@ Contributions are welcome! Here's how you can help:
 
 ---
 
+## 💬 Support
 
 <details>
 
