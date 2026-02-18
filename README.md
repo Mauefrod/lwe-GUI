@@ -1,5 +1,7 @@
-# 🎨 Linux Wallpaper Engine Expanded Features GUI - NOT DEPRECATED.
-# WE'RE SO BACK
+# 🎨 Linux Wallpaper Engine Expanded Features GUI - DEPRECATED
+# Use One of the other available GUIs.
+# The sole reason to use mine is the random / delay mode, which is not hard to implement, so ill move to give the other guis support.
+*take a bow*
 
 <div align="center">
 
