@@ -1,4 +1,6 @@
-# 🎨 Linux Wallpaper Engine Expanded Features GUI
+# 🎨 Linux Wallpaper Engine Expanded Features GUI - DEPRECATED.
+# As this project has been outscoped by Jagrat7 Implementation, there's no reason to keep developing *take a bow*
+https://github.com/jagrat7/linux-wallpaper-engine
 
 <div align="center">
 
