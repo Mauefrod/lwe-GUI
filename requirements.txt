@@ -1,4 +1,5 @@
 Pillow>=9.5.0,<11
+paper-core-module @ git+ssh://git@github.com/Mauefrod/paper-coreModule.git@main
 
 # Notes:
 # - Tkinter is provided by system packages (python3-tk / python3-tkinter)

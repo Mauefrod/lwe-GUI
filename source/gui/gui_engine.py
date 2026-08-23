@@ -20,6 +20,7 @@ from gui.ui_components.directory_controls import DirectoryControls
 from gui.ui_components.flags import FlagsPanel
 from gui.ui_components.sound_panel import SoundPanel
 from gui.ui_components.gallery_canvas import GalleryCanvas
+from gui.ui_components.metadata_filter_panel import MetadataFilterPanel
 from gui.event_handler.event_handler import EventHandlers
 from gui.gallery_view.gallery_manager import GalleryManager
 from gui.keybinding_manager import KeybindingController
@@ -117,6 +118,9 @@ class WallpaperEngineGUI:
 
         self.sound_panel = SoundPanel(self.main_window)
         self.sound_panel.grid(column=1, row=1, sticky="ew", padx=(5, 5), pady=(0, 0))
+
+        self.metadata_filter_panel = MetadataFilterPanel(self.main_window, lambda ast: self.gallery_manager.set_filter(ast))
+        self.metadata_filter_panel.grid(column=1, row=2, sticky="ew", padx=(5, 5), pady=(5, 0))
 
         self.gallery_canvas = GalleryCanvas(self.main_window)
         self.gallery_canvas.grid(column=0, row=1, columnspan=1, sticky="nsew")
